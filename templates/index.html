@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Submission</title>
+</head>
+<body>
+    <h1>Submit a String to Count Letters</h1>
+    <form id="job-form">
+        <label for="input-string">Enter a string:</label>
+        <input type="text" id="input-string" name="input-string" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    <h2 id="job-status" style="display:none;">Job Status: 
+        <span id="job-progress">0%</span> (Elapsed Time: <span id="elapsed-time">0</span>s)
+    </h2>
+
+    <h3 id="job-result" style="display:none;">Letter Count: <span id="result-count"></span></h3>
+
+    <script>
+        document.getElementById('job-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            
+            // Get the string input from the text box
+            const inputString = document.getElementById('input-string').value;
+
+            // Send the string to the backend
+            fetch('/submit-job', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ input_string: inputString })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const jobId = data.job_id;
+                console.log(`Job ID: ${jobId}`);
+
+                // Show the job status section
+                document.getElementById('job-status').style.display = 'block';
+                
+                // Track time and job progress
+                let elapsedTime = 0;
+                const intervalId = setInterval(() => {
+                    elapsedTime++;
+                    document.getElementById('elapsed-time').innerText = elapsedTime;
+                    
+                    // Poll the server every second for job progress
+                    fetch(`/job-status/${jobId}`)
+                        .then(response => response.json())
+                        .then(status => {
+                            document.getElementById('job-progress').innerText = `${status.progress}%`;
+                            
+                            if (status.progress === 100) {
+                                clearInterval(intervalId);  // Stop polling
+
+                                // Display the result
+                                document.getElementById('job-result').style.display = 'block';
+                                document.getElementById('result-count').innerText = status.letter_count;
+                            }
+                        });
+                }, 1000);
+            });
+        });
+    </script>
+</body>
+</html>
