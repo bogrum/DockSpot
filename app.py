@@ -1,19 +1,37 @@
 from flask import Flask, request, jsonify, render_template
 import time
 from threading import Thread
+from data_analysis.step1_xtc_handling import step1_xtc_handling
+from data_analysis.step2_pocketscsv import step2_pockets_csv
 
 app = Flask(__name__)
 
-# Store jobs and their progress and result
+# Store jobs and their progress and results
 jobs = {}
 
-def process_job(job_id, input_string):
-    """Simulate job progress and count letters in the input string."""
-    letter_count = sum(1 for char in input_string if char.isalpha())  # Count letters only
-    for i in range(10):  # Simulate work by sleeping
-        time.sleep(1)
-        jobs[job_id]['progress'] = (i + 1) * 10  # Update job progress (10%, 20%, ..., 100%)
-    jobs[job_id]['letter_count'] = letter_count  # Store the result
+def process_job(job_id, input_data):
+    """
+    Simulate job progress and run scripts sequentially.
+    """
+    try:
+        # Step 1
+        jobs[job_id]['progress'] = 10
+        step1_output = step1_xtc_handling(input_data)  # Call Step 1 function
+        jobs[job_id]['step1_result'] = step1_output
+        time.sleep(1)  # Simulate delay
+
+        # Step 2
+        jobs[job_id]['progress'] = 50
+        step2_output = step2_pockets_csv(step1_output)  # Use Step 1's output as input for Step 2
+        jobs[job_id]['step2_result'] = step2_output
+        time.sleep(1)  # Simulate delay
+
+        # Finalize
+        jobs[job_id]['progress'] = 100
+        jobs[job_id]['status'] = "completed"
+    except Exception as e:
+        jobs[job_id]['status'] = "failed"
+        jobs[job_id]['error'] = str(e)
 
 @app.route('/')
 def index():
@@ -24,13 +42,13 @@ def index():
 def submit_job():
     """Receive a job submission."""
     data = request.get_json()
-    input_string = data.get('input_string', '')
-    
+    input_data = data.get('input_data', {})  # Replace with actual expected input format
+
     job_id = str(len(jobs) + 1)  # Generate a new job ID
-    jobs[job_id] = {'progress': 0, 'letter_count': None}  # Initial progress is 0%
+    jobs[job_id] = {'progress': 0, 'status': 'in-progress', 'step1_result': None, 'step2_result': None}  # Initial state
 
     # Start job in background using a thread
-    thread = Thread(target=process_job, args=(job_id, input_string))
+    thread = Thread(target=process_job, args=(job_id, input_data))
     thread.start()
 
     return jsonify({"job_id": job_id}), 202  # Return job ID
@@ -39,7 +57,7 @@ def submit_job():
 def job_status(job_id):
     """Return the progress of the job."""
     if job_id in jobs:
-        return jsonify({"job_id": job_id, "progress": jobs[job_id]['progress'], "letter_count": jobs[job_id]['letter_count']})
+        return jsonify(jobs[job_id])
     else:
         return jsonify({"error": "Job not found"}), 404
 
