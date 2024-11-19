@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from scipy.spatial.distance import cdist
-from config import processed_dir, xtc_file, pdb_dir, p2rank_processed_dir
-from config import pdb_list
+from data_analysis.config import processed_dir, xtc_file, pdb_dir, p2rank_processed_dir
+from data_analysis.config import pdb_list
 
 # Open CSV file for writing
 csv_filename = os.path.join(processed_dir, "pockets.csv")

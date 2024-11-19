@@ -5,7 +5,6 @@ from data_analysis.step1_xtc_handling import xtc_to_pdb, write_pdb_list, run_p2r
 #from data_analysis.step2_pocketscsv import step2_pockets_csv
 from data_analysis.config import pdb_dir, processed_dir, p2rank_processed_dir
 from datetime import datetime
-import logging
 
 app = Flask(__name__)
 
@@ -21,52 +20,34 @@ job_lock = Lock()
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s]: %(message)s')
-
-def process_job(job_id, xtc_path, topology_path):
+def process_job(job_id, file_path):
+    """
+    Run the job's steps sequentially, updating progress and results.
+    """
     try:
-        logging.info(f"Starting job {job_id} with xtc: {xtc_path} and topology: {topology_path}")
         jobs[job_id]['status'] = 'in-progress'
         jobs[job_id]['job_start_time'] = datetime.now().isoformat()
 
         # Step 1: Process XTC and Generate PDBs
         jobs[job_id]['progress'] = 10
-        logging.debug("Calling xtc_to_pdb...")
-        jobs[job_id]['status'] = 'generating xtc files into pdb files...'
-        pdb_files = xtc_to_pdb(xtc_path, topology_path, pdb_dir)
-        logging.debug(f"Generated PDB files: {pdb_files}")
-
-        jobs[job_id]['progress'] = 20
-        jobs[job_id]['status'] = 'merging pdb files...'
+        pdb_files = xtc_to_pdb(file_path, pdb_dir)
         pdb_list_file = write_pdb_list(pdb_dir, f"{processed_dir}/pdb_list.ds")
-        
-        logging.debug(f"Written PDB list file: {pdb_list_file}")
-
-        jobs[job_id]['progress'] = 30
-        jobs[job_id]['status'] = 'detecting binding pockets...'
         run_p2rank(pdb_list_file, p2rank_processed_dir)
-        logging.info(f"p2rank processed directory: {p2rank_processed_dir}")
         jobs[job_id]['step1_result'] = {"pdb_files": pdb_files}
 
         # Step 2: Generate pockets.csv
-        jobs[job_id]['progress'] = 40
-        logging.debug("Skipping step 2 (uncomment if needed)")
+        jobs[job_id]['progress'] = 50
+        #csv_file = step2_pockets_csv(p2rank_processed_dir)
+        #jobs[job_id]['step2_result'] = {"csv_file": csv_file}
 
         # Finalize
         jobs[job_id]['progress'] = 100
         jobs[job_id]['status'] = "completed"
         jobs[job_id]['job_end_time'] = datetime.now().isoformat()
-        logging.info(f"Job {job_id} completed successfully")
 
     except Exception as e:
         jobs[job_id]['status'] = "failed"
         jobs[job_id]['error'] = str(e)
-        logging.error(f"Job {job_id} failed with error: {e}")
-
-
 
 
 @app.route('/')
@@ -80,22 +61,16 @@ def submit_job():
     """
     Handle job submissions with file uploads.
     """
-    # Check if both XTC and topology files are present in the request
-    if 'xtc_file' not in request.files or 'topology_file' not in request.files:
-        return jsonify({"error": "Both xtc_file and topology_file are required"}), 400
+    if 'xtc_file' not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
 
     xtc_file = request.files['xtc_file']
-    topology_file = request.files['topology_file']
+    if xtc_file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
 
-    # Validate the files
-    if xtc_file.filename == '' or topology_file.filename == '':
-        return jsonify({"error": "Both files must be selected"}), 400
-
-    # Save the uploaded files
-    xtc_path = os.path.join(app.config['UPLOAD_FOLDER'], xtc_file.filename)
-    topology_path = os.path.join(app.config['UPLOAD_FOLDER'], topology_file.filename)
-    xtc_file.save(xtc_path)
-    topology_file.save(topology_path)
+    # Save the uploaded file
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], xtc_file.filename)
+    xtc_file.save(file_path)
 
     # Create a new job
     with job_lock:
@@ -110,11 +85,10 @@ def submit_job():
         }
 
     # Start processing in the background
-    thread = Thread(target=process_job, args=(job_id, xtc_path, topology_path))
+    thread = Thread(target=process_job, args=(job_id, file_path))
     thread.start()
 
     return jsonify({"job_id": job_id}), 202  # Return job ID for tracking
-
 
 
 @app.route('/job-status/<job_id>', methods=['GET'])

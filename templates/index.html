@@ -3,66 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Submission</title>
+    <title>Data Analysis Job Submission</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input[type="file"] {
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+        }
+
+        .progress {
+            width: 100%;
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            height: 25px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #4caf50;
+            width: 0%;
+            text-align: center;
+            color: white;
+            line-height: 25px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Submit a String to Count Letters</h1>
-    <form id="job-form">
-        <label for="input-string">Enter a string:</label>
-        <input type="text" id="input-string" name="input-string" required>
-        <button type="submit">Submit</button>
-    </form>
+    <div class="container">
+        <h1>Submit Your Job</h1>
+        <form id="job-form">
+            <label for="xtc-file">Upload XTC File:</label>
+            <input type="file" id="xtc-file" name="xtc_file" required>
+            
+            <label for="topology-file">Upload Topology File:</label>
+            <input type="file" id="topology-file" name="topology_file" required>
+            
+            <button type="submit">Submit</button>
+        </form>
 
-    <h2 id="job-status" style="display:none;">Job Status: 
-        <span id="job-progress">0%</span> (Elapsed Time: <span id="elapsed-time">0</span>s)
-    </h2>
-
-    <h3 id="job-result" style="display:none;">Letter Count: <span id="result-count"></span></h3>
+        <div id="status" style="display:none;">
+            <h2>Job Status</h2>
+            <p><strong>Job ID:</strong> <span id="job-id"></span></p>
+            <p><strong>Progress:</strong></p>
+            <div class="progress">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <p><strong>Status:</strong> <span id="job-status"></span></p>
+            <p><strong>Step 1 Result:</strong> <span id="step1-result"></span></p>
+            <p><strong>Step 2 Result:</strong> <span id="step2-result"></span></p>
+        </div>
+    </div>
 
     <script>
-        document.getElementById('job-form').addEventListener('submit', (event) => {
+        document.getElementById('job-form').addEventListener('submit', function(event) {
             event.preventDefault();
-            
-            // Get the string input from the text box
-            const inputString = document.getElementById('input-string').value;
 
-            // Send the string to the backend
+            const formData = new FormData();
+            const xtcFile = document.getElementById('xtc-file').files[0];
+            const topologyFile = document.getElementById('topology-file').files[0];
+
+            if (!xtcFile || !topologyFile) {
+                alert("Please select both XTC and topology files before submitting.");
+                return;
+            }
+
+            formData.append('xtc_file', xtcFile);
+            formData.append('topology_file', topologyFile);
+
+            // Submit the job
             fetch('/submit-job', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input_string: inputString })
+                body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to submit job. Please try again.");
+                }
+                return response.json();
+            })
             .then(data => {
                 const jobId = data.job_id;
-                console.log(`Job ID: ${jobId}`);
+                document.getElementById('job-id').textContent = jobId;
+                document.getElementById('status').style.display = 'block';
 
-                // Show the job status section
-                document.getElementById('job-status').style.display = 'block';
-                
-                // Track time and job progress
-                let elapsedTime = 0;
-                const intervalId = setInterval(() => {
-                    elapsedTime++;
-                    document.getElementById('elapsed-time').innerText = elapsedTime;
-                    
-                    // Poll the server every second for job progress
-                    fetch(`/job-status/${jobId}`)
-                        .then(response => response.json())
-                        .then(status => {
-                            document.getElementById('job-progress').innerText = `${status.progress}%`;
-                            
-                            if (status.progress === 100) {
-                                clearInterval(intervalId);  // Stop polling
-
-                                // Display the result
-                                document.getElementById('job-result').style.display = 'block';
-                                document.getElementById('result-count').innerText = status.letter_count;
-                            }
-                        });
-                }, 1000);
+                // Start polling for job status
+                pollJobStatus(jobId);
+            })
+            .catch(error => {
+                alert(error.message);
             });
         });
+
+        function pollJobStatus(jobId) {
+            const progressBar = document.getElementById('progress-bar');
+            const jobStatus = document.getElementById('job-status');
+            const step1Result = document.getElementById('step1-result');
+            const step2Result = document.getElementById('step2-result');
+
+            const interval = setInterval(() => {
+                fetch(`/job-status/${jobId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch job status.");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    progressBar.style.width = `${data.progress}%`;
+                    progressBar.textContent = `${data.progress}%`;
+                    jobStatus.textContent = data.status;
+
+                    if (data.step1_result) {
+                        step1Result.textContent = JSON.stringify(data.step1_result);
+                    }
+                    if (data.step2_result) {
+                        step2Result.textContent = JSON.stringify(data.step2_result);
+                    }
+
+                    if (data.status === 'completed' || data.status === 'failed') {
+                        clearInterval(interval);
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    clearInterval(interval);
+                });
+            }, 1000); // Poll every second
+        }
     </script>
 </body>
 </html>
