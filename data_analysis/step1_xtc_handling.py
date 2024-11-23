@@ -14,15 +14,24 @@ def xtc_to_pdb(xtc_file,topology, pdb_dir):
         print(f"Frame {i} saved as {pdb_file}")
     return [os.path.join(pdb_dir, f"{os.path.splitext(os.path.basename(xtc_file))[0]}_{i}.pdb") for i in range(len(traj))]
 
+
+
 def write_pdb_list(pdb_dir, output_file):
-    """Write a list of PDB files to a file."""
+    """
+    Write a list of PDB file paths relative to pdb_dir to a file.
+    """
     pdb_list = glob.glob(os.path.join(pdb_dir, '*.pdb'))
+
     with open(output_file, 'w') as f:
         for pdb_file in pdb_list:
-            f.write(os.path.relpath(pdb_file, start=processed_dir))
-            f.write('\n')
+            # Make the path relative to pdb_dir
+            rel_path = os.path.relpath(pdb_file, start=pdb_dir)
+            f.write(rel_path + '\n')
+
     print(f"PDB list written to {output_file}")
     return output_file
+
+
 
 def run_p2rank(pdb_list_file, output_dir, threads=4):
     """Run P2Rank with the specified list of PDB files."""
