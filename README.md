@@ -1,4 +1,4 @@
-# Project Title: Ligand-Receptor Binding Site Prediction and Docking
+# DockSpot: Ensemble Docking Tool
 
 This repository contains the code and resources for a web-based tool designed to predict ligand-binding sites on proteins and facilitate molecular docking simulations. The tool leverages state-of-the-art algorithms to enhance the accuracy and efficiency of protein-ligand interaction analysis, making it an invaluable resource for researchers in drug design, bioinformatics, and computational biology.
 
