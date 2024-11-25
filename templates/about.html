@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - DockSpot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            overflow-y: auto; /* Enable scrolling */
+        }
+
+        /* Menu Bar Styles */
+        nav {
+            background-color: #333;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav a {
+            float: left;
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+            font-size: 17px;
+        }
+
+        nav a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background-color: white;
+            padding: 20px;
+            padding-bottom: 90px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        h3 {
+            color: #555;
+        }
+
+        p {
+            line-height: 1.6;
+        }
+
+        ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
+
+        .code-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .copy-btn:hover {
+            background-color: #444;
+        }
+
+        textarea {
+            width: 100%; /* Adjusted smaller width */
+            max-width: 100%;
+            height: 62px; /* Reduced height further */
+            font-family: monospace;
+            border: 1px solid #ddd;
+            padding: 8px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            overflow-y: auto; /* Enables scroll if code exceeds height */
+            resize: none; /* Prevent resizing */
+            margin-top: 10px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js"></script>
+</head>
+<body>
+    <!-- Navigation Menu -->
+    <nav>
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('search_job') }}">Jobs</a>
+        <a href="{{ url_for('about') }}">About</a>
+    </nav>
+
+    <header>
+        <h1>DockSpot: Ensemble Docking Tool</h1>
+    </header>
+
+    <div class="container">
+        <h2>About DockSpot</h2>
+        <p><strong>DockSpot</strong> is a web-based tool designed to predict ligand-binding sites on proteins and facilitate molecular docking simulations. It leverages state-of-the-art algorithms to enhance the accuracy and efficiency of protein-ligand interaction analysis, making it an invaluable resource for researchers in drug design, bioinformatics, and computational biology.</p>
+
+        <h3>Key Features</h3>
+        <ul>
+            <li><strong>Ligand-Binding Site Prediction:</strong> Accurate identification of potential binding pockets on protein structures using advanced computational methods.</li>
+            <li><strong>Molecular Docking:</strong> Integrates various docking algorithms to simulate and predict ligand binding poses.</li>
+            <li><strong>Web-based Interface:</strong> User-friendly interface to upload protein structures, run simulations, and visualize results in real-time.</li>
+            <li><strong>Open-source:</strong> Free and open to contributions, ensuring constant improvement and adaptation to the latest advancements in computational chemistry.</li>
+        </ul>
+
+        <h3>Technologies</h3>
+        <ul>
+            <li><strong>Python:</strong> The core backend is developed in Python, utilizing popular libraries such as NumPy, SciPy, and RDKit.</li>
+            <li><strong>Flask:</strong> Lightweight web framework for building the web interface and handling user interactions.</li>
+            <li><strong>Cloud Integration:</strong> Utilizes cloud hosting for computationally intensive tasks and provides easy access to users worldwide.</li>
+        </ul>
+        <h3>Usage</h3>
+        <p><strong>DockSpot</strong> is available online, providing easy access to the web interface for running simulations and visualizing results in real-time. Simply visit <a href="http://localhost:5000" target="_blank">http://localhost:5000</a> to start using it.</p>
+        <p>If you prefer to run DockSpot locally, follow the instructions below:</p>
+
+        <h3>Installation</h3>
+        <div class="code-box">
+            <button class="copy-btn" data-clipboard-target="#install-code">Copy</button>
+            <textarea id="install-code" readonly>
+git clone https://github.com/bogrum/DockSpot.git
+cd DockSpot
+pip install -r requirements.txt
+            </textarea>
+        </div>
+
+        <h3>Usage</h3>
+        <div class="code-box">
+            <button class="copy-btn" data-clipboard-target="#usage-code">Copy</button>
+            <textarea id="usage-code" readonly>
+python app.py
+            </textarea>
+        </div>
+        <p>Access the web interface via <a href="http://localhost:5000" target="_blank">http://localhost:5000</a>. Upload a protein structure, configure docking parameters, and view the results directly in your browser.</p>
+
+        <h3>License</h3>
+        <p>This project is licensed under the MIT License - see the <a href="https://github.com/bogrum/DockSpot/blob/main/LICENSE" target="_blank">LICENSE</a> file for details.</p>
+
+        <h3>Project Information</h3>
+        <p><strong>Project Lead:</strong> Emre Taha Çevik</p>
+        <p><strong>Advisor:</strong> Onur Serçinoğlu (Gebze Technical University)</p>
+        <p><strong>Funded by:</strong> TUBITAK under the 2209-A title.</p>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 DockSpot - All Rights Reserved</p>
+    </footer>
+
+    <script>
+        new ClipboardJS('.copy-btn');
+    </script>
+</body>
+</html>

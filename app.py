@@ -208,6 +208,30 @@ def job_status(job_id):
         else:
             return jsonify({"error": "Job not found"}), 404
 
+@app.route('/search-job', methods=['GET', 'POST'])
+def search_job():
+    """
+    Handle the search job form.
+    If the form is submitted, look up the job status.
+    """
+    job_data = None
+    error = None
+
+    if request.method == 'POST':
+        # Get the job_id from the form
+        job_id = request.form.get('job_id')
+
+        if job_id:
+            with job_lock:
+                # Check if the job ID exists
+                if job_id in jobs:
+                    job_data = jobs[job_id]
+                else:
+                    error = "Job not found"
+        else:
+            error = "Job ID is required"
+
+    return render_template('search_job.html', job_data=job_data, error=error)
 
 
 @app.errorhandler(500)
@@ -215,6 +239,9 @@ def internal_server_error(e):
     """Global error handler for unexpected issues."""
     return jsonify({"error": "An internal server error occurred", "details": str(e)}), 500
 
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
 if __name__ == '__main__':
     init_db()

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Analysis Job Submission</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Job Search Page</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">  <!-- Correct way to link CSS -->
 
     <style>
         body {
@@ -121,7 +121,6 @@
     </style>
 </head>
 <body>
-
     <!-- Navigation Menu -->
     <nav>
         <a href="{{ url_for('index') }}">Home</a>
@@ -129,19 +128,13 @@
         <a href="{{ url_for('about') }}">About</a>
     </nav>
 
-    <header>
-        <h1>Submit Data Analysis Job</h1>
-    </header>
-
     <div class="container">
-        <form id="job-form">
-            <label for="xtc-file">Upload XTC File:</label>
-            <input type="file" id="xtc-file" name="xtc_file" required>
+        <h1>Search Job by Job ID</h1>
+        <form id="search-form">
+            <label for="job-id-input">Enter Job ID:</label>
+            <input type="text" id="job-id-input" name="job_id" required>
             
-            <label for="topology-file">Upload Topology File:</label>
-            <input type="file" id="topology-file" name="topology_file" required>
-            
-            <button type="submit">Submit</button>
+            <button type="submit">Search</button>
         </form>
 
         <div id="status" style="display:none;">
@@ -157,87 +150,50 @@
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2024 DockSpot - All Rights Reserved</p>
-    </footer>
-
     <script>
-        document.getElementById('job-form').addEventListener('submit', function(event) {
+        document.getElementById('search-form').addEventListener('submit', function(event) {
             event.preventDefault();
 
-            const formData = new FormData();
-            const xtcFile = document.getElementById('xtc-file').files[0];
-            const topologyFile = document.getElementById('topology-file').files[0];
+            const jobId = document.getElementById('job-id-input').value.trim();
 
-            if (!xtcFile || !topologyFile) {
-                alert("Please select both XTC and topology files before submitting.");
+            if (!jobId) {
+                alert("Please enter a valid Job ID.");
                 return;
             }
 
-            formData.append('xtc_file', xtcFile);
-            formData.append('topology_file', topologyFile);
-
-            // Submit the job
-            fetch('/submit-job', {
-                method: 'POST',
-                body: formData
-            })
+            // Fetch job status by job ID
+            fetch(`/job-status/${jobId}`)
             .then(response => {
                 if (!response.ok) {
-                    throw new Error("Failed to submit job. Please try again.");
+                    throw new Error("Failed to fetch job status.");
                 }
                 return response.json();
             })
             .then(data => {
-                const jobId = data.job_id;
+                // Display job status
                 document.getElementById('job-id').textContent = jobId;
-                document.getElementById('status').style.display = 'block';
+                document.getElementById('progress-bar').style.width = `${data.progress}%`;
+                document.getElementById('progress-bar').textContent = `${data.progress}%`;
+                document.getElementById('job-status').textContent = data.status;
 
-                // Start polling for job status
-                pollJobStatus(jobId);
+                if (data.step1_result) {
+                    document.getElementById('step1-result').textContent = JSON.stringify(data.step1_result);
+                }
+                if (data.step2_result) {
+                    document.getElementById('step2-result').textContent = JSON.stringify(data.step2_result);
+                }
+
+                // Show the status section
+                document.getElementById('status').style.display = 'block';
             })
             .catch(error => {
-                alert(error.message);
+                alert("Job not found or error occurred.");
             });
         });
-
-        function pollJobStatus(jobId) {
-            const progressBar = document.getElementById('progress-bar');
-            const jobStatus = document.getElementById('job-status');
-            const step1Result = document.getElementById('step1-result');
-            const step2Result = document.getElementById('step2-result');
-
-            const interval = setInterval(() => {
-                fetch(`/job-status/${jobId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Failed to fetch job status.");
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    progressBar.style.width = `${data.progress}%`;
-                    progressBar.textContent = `${data.progress}%`;
-                    jobStatus.textContent = data.status;
-
-                    if (data.step1_result) {
-                        step1Result.textContent = JSON.stringify(data.step1_result);
-                    }
-                    if (data.step2_result) {
-                        step2Result.textContent = JSON.stringify(data.step2_result);
-                    }
-
-                    if (data.status === 'completed' || data.status === 'failed') {
-                        clearInterval(interval);
-                    }
-                })
-                .catch(error => {
-                    console.error(error);
-                    clearInterval(interval);
-                });
-            }, 1000); // Poll every second
-        }
     </script>
+    <footer>
+        <p>&copy; 2024 DockSpot - All Rights Reserved</p>
+    </footer>
 
 </body>
 </html>
