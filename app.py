@@ -3,6 +3,7 @@ import os
 from threading import Thread, Lock
 from data_analysis.step1_xtc_handling import xtc_to_pdb, write_pdb_list, run_p2rank
 from data_analysis.step2_pocketscsv import merge_to_csv
+from data_analysis.step3_clustering_and_repchoosing import cluster_and_save_representatives
 from data_analysis.config import pdb_dir, processed_dir, p2rank_processed_dir
 from datetime import datetime
 import logging
@@ -109,8 +110,13 @@ def process_job(job_id, xtc_path, topology_path, job_folder):
         # Step 3: Clustering and choosing representatives...
         jobs[job_id]['progress'] = 50
         jobs[job_id]['status'] = 'analyzing pockets...'
-        #pockets_csv = merge_to_csv(xtc_to_pdb_folder,pdb_list_file)
-        #logging.debug(f"Pockets data saved to {pockets_csv}")
+        logging.debug(f"xtc_to_pdb_folder: {xtc_to_pdb_folder}")
+        logging.debug(f"Expected pockets file: {os.path.join(xtc_to_pdb_folder, 'pockets.csv')}")
+
+        pockets_file = os.path.join(xtc_to_pdb_folder, "pockets.csv")
+        output_file_path = os.path.join(xtc_to_pdb_folder, "representatives.txt")
+        representatives = cluster_and_save_representatives(pockets_file, output_file_path)
+        logging.debug(f"Representatives are {representatives}")
 
 
         # Finalize
