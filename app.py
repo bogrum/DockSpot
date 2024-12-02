@@ -21,6 +21,7 @@ jobs = {}
 job_lock = Lock()
 
 # Configure logging
+logging.getLogger('watchdog').setLevel(logging.WARNING)
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s]: %(message)s')
 
 # SQLite database setup
@@ -245,4 +246,4 @@ def about():
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

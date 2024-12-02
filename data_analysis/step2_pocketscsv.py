@@ -5,7 +5,8 @@ import re
 
 def extract_frame_number(filename):
     """Extract frame number from filenames like '2XIR_traj_1.pdb_predictions.csv'."""
-    match = re.search(r'traj_(\d+)', filename)
+    match = re.search(r'(\d+)(?=\.[^.]+$)', filename)
+
     if match:
         return match.group(1)
     else:
